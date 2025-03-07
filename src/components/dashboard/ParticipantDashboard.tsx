@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Trophy, Target, Clock, ChevronRight, AlertCircle, Plus, ArrowRight } from 'lucide-react';
+import { Trophy, Target, Clock, ChevronRight, AlertCircle, Plus, ArrowRight, Calendar, CheckCircle, AlertTriangle } from 'lucide-react';
 import Countdown from 'react-countdown';
 import { supabase } from '../../lib/supabase';
 import { OfficeRanking } from '../rankings/OfficeRanking';
@@ -32,6 +32,8 @@ export function ParticipantDashboard() {
   const [, setTermsAccepted] = useState(false);
   const [countdownTarget, setCountdownTarget] = useState<Date | null>(null);
   const [isSubmissionWindowOpen, setIsSubmissionWindowOpen] = useState(false);
+  const [challengeStatus, setChallengeStatus] = useState<'not_started' | 'active' | 'ended' | null>(null);
+  const [countdownType, setCountdownType] = useState<'to_start' | 'to_end' | 'to_submission'>('to_submission');
 
   useEffect(() => {
     loadDashboardData();
@@ -40,34 +42,58 @@ export function ParticipantDashboard() {
   useEffect(() => {
     if (!activeChallenge) return;
 
-    const updateCountdown = () => {
+    const updateStatus = () => {
       const now = new Date();
-      const start = new Date();
-      start.setHours(
-          parseInt(activeChallenge.submission_start.split(':')[0], 10),
-          parseInt(activeChallenge.submission_start.split(':')[1], 10),
-          0
-      );
+      const startDate = new Date(activeChallenge.start_date);
+      const endDate = new Date(activeChallenge.end_date);
 
-      const end = new Date();
-      end.setHours(
-          parseInt(activeChallenge.submission_end.split(':')[0], 10),
-          parseInt(activeChallenge.submission_end.split(':')[1], 10),
-          0
-      );
+      // Définir le statut du challenge (pas encore commencé, actif, terminé)
+      if (now < startDate) {
+        setChallengeStatus('not_started');
+        setCountdownType('to_start');
+        setCountdownTarget(startDate);
+      } else if (now > endDate) {
+        setChallengeStatus('ended');
+        setCountdownType('to_end');
+        setCountdownTarget(null);
+      } else {
+        setChallengeStatus('active');
 
-      if (now > end) {
-        start.setDate(start.getDate() + 1);
-        end.setDate(end.getDate() + 1);
+        // Vérifier si la fenêtre de soumission est ouverte
+        const submissionStart = new Date();
+        submissionStart.setHours(
+            parseInt(activeChallenge.submission_start.split(':')[0], 10),
+            parseInt(activeChallenge.submission_start.split(':')[1], 10),
+            0
+        );
+
+        const submissionEnd = new Date();
+        submissionEnd.setHours(
+            parseInt(activeChallenge.submission_end.split(':')[0], 10),
+            parseInt(activeChallenge.submission_end.split(':')[1], 10),
+            0
+        );
+
+        if (now > submissionEnd) {
+          submissionStart.setDate(submissionStart.getDate() + 1);
+          submissionEnd.setDate(submissionEnd.getDate() + 1);
+        }
+
+        const isOpen = now >= submissionStart && now <= submissionEnd;
+        setIsSubmissionWindowOpen(isOpen);
+
+        if (isOpen) {
+          setCountdownType('to_end');
+          setCountdownTarget(submissionEnd);
+        } else {
+          setCountdownType('to_submission');
+          setCountdownTarget(submissionStart);
+        }
       }
-
-      const isOpen = now >= start && now <= end;
-      setIsSubmissionWindowOpen(isOpen);
-      setCountdownTarget(isOpen ? end : start);
     };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    updateStatus();
+    const interval = setInterval(updateStatus, 1000);
     return () => clearInterval(interval);
   }, [activeChallenge]);
 
@@ -93,7 +119,7 @@ export function ParticipantDashboard() {
           .select('*, submission_start, submission_end')
           .eq('status', 'active')
           .eq('level', userData.current_level)
-          .single();
+          .maybeSingle();
 
       if (challengeError && challengeError.code !== 'PGRST116') throw challengeError;
       setActiveChallenge(challengeData);
@@ -261,11 +287,90 @@ export function ParticipantDashboard() {
       participation?.status === 'completed' &&
       !transitioning;
 
-  const submitButtonDisabled = showNextChallengeButton || !isSubmissionWindowOpen;
+  const submitButtonDisabled = showNextChallengeButton ||
+      !isSubmissionWindowOpen ||
+      challengeStatus === 'not_started' ||
+      challengeStatus === 'ended';
+
+  // Obtenir la couleur de bordure et la bannière en fonction du statut
+  let statusBorderColor = "border-blue-200";
+  let statusBanner = null;
+
+  if (challengeStatus === 'not_started') {
+    statusBorderColor = "border-yellow-200";
+    statusBanner = (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-lg">
+          <div className="flex items-center">
+            <Calendar className="h-5 w-5 text-yellow-500 mr-2" />
+            <p className="text-yellow-700 font-medium">
+              Ce challenge n'a pas encore commencé. Il débutera le{' '}
+              <span className="font-bold">
+              {format(new Date(activeChallenge.start_date), 'dd MMMM yyyy', { locale: fr })}
+            </span>
+            </p>
+          </div>
+          {countdownTarget && (
+              <div className="mt-2 pl-7">
+                <span className="text-yellow-600 font-medium">Temps restant : </span>
+                <Countdown
+                    date={countdownTarget}
+                    renderer={({ days, hours, minutes, seconds }) => (
+                        <span className="text-yellow-800 font-bold">
+                  {days}j {hours}h {minutes}m {seconds}s
+                </span>
+                    )}
+                />
+              </div>
+          )}
+        </div>
+    );
+  } else if (challengeStatus === 'ended') {
+    statusBorderColor = "border-gray-200";
+    statusBanner = (
+        <div className="bg-gray-50 border-l-4 border-gray-400 p-4 mb-4 rounded-lg">
+          <div className="flex items-center">
+            <CheckCircle className="h-5 w-5 text-gray-500 mr-2" />
+            <p className="text-gray-700 font-medium">
+              Ce challenge est terminé depuis le{' '}
+              <span className="font-bold">
+              {format(new Date(activeChallenge.end_date), 'dd MMMM yyyy', { locale: fr })}
+            </span>
+            </p>
+          </div>
+        </div>
+    );
+  } else if (challengeStatus === 'active' && !isSubmissionWindowOpen) {
+    statusBanner = (
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-lg">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-blue-500 mr-2" />
+            <p className="text-blue-700 font-medium">
+              La fenêtre de soumission est actuellement fermée. Prochaine fenêtre à{' '}
+              {countdownTarget && format(countdownTarget, 'HH:mm', { locale: fr })}
+            </p>
+          </div>
+          {countdownTarget && (
+              <div className="mt-2 pl-7">
+                <span className="text-blue-600 font-medium">Temps restant : </span>
+                <Countdown
+                    date={countdownTarget}
+                    renderer={({ days, hours, minutes, seconds }) => (
+                        <span className="text-blue-800 font-bold">
+                  {days}j {hours}h {minutes}m {seconds}s
+                </span>
+                    )}
+                />
+              </div>
+          )}
+        </div>
+    );
+  }
 
   return (
       <div className="space-y-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
+        {statusBanner}
+
+        <div className={`bg-white rounded-xl shadow-sm p-6 border-2 ${statusBorderColor} transition-colors duration-300`}>
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-900">
@@ -335,7 +440,9 @@ export function ParticipantDashboard() {
               </p>
               <div className="mt-2">
                 <p className="text-xs text-gray-600">
-                  {isSubmissionWindowOpen ? 'Fin de soumission dans :' : 'Prochaine soumission dans :'}
+                  {countdownType === 'to_start' && 'Début du challenge dans :'}
+                  {countdownType === 'to_end' && isSubmissionWindowOpen && 'Fin de soumission dans :'}
+                  {countdownType === 'to_submission' && 'Prochaine soumission dans :'}
                 </p>
                 {countdownTarget && (
                     <Countdown
@@ -358,12 +465,18 @@ export function ParticipantDashboard() {
                         ? 'bg-green-500'
                         : participation?.status === 'failed'
                             ? 'bg-red-500'
-                            : 'bg-yellow-500'
+                            : challengeStatus === 'not_started'
+                                ? 'bg-yellow-500'
+                                : challengeStatus === 'ended'
+                                    ? 'bg-gray-500'
+                                    : 'bg-blue-500'
                 }`}></div>
               </div>
               <p className="text-2xl font-bold text-gray-900">
                 {participation?.status === 'completed' ? 'Complété' :
-                    participation?.status === 'failed' ? 'Échoué' : 'En cours'}
+                    participation?.status === 'failed' ? 'Échoué' :
+                        challengeStatus === 'not_started' ? 'À venir' :
+                            challengeStatus === 'ended' ? 'Terminé' : 'En cours'}
               </p>
               <div className="mt-2 space-y-2">
                 {showNextChallengeButton ? (
@@ -389,10 +502,24 @@ export function ParticipantDashboard() {
                         onClick={() => setShowMatrixForm(true)}
                         disabled={submitButtonDisabled}
                         className="w-full inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
-                        title={!isSubmissionWindowOpen ? "Vous devez attendre l'heure de soumission" : ""}
+                        title={
+                          challengeStatus === 'not_started'
+                              ? "Le challenge n'a pas encore commencé"
+                              : challengeStatus === 'ended'
+                                  ? "Le challenge est terminé"
+                                  : !isSubmissionWindowOpen
+                                      ? "Vous devez attendre l'heure de soumission"
+                                      : ""
+                        }
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      {isSubmissionWindowOpen ? 'Nouvelle soumission' : 'En attente de l\'heure de soumission'}
+                      {challengeStatus === 'not_started'
+                          ? "En attente du début"
+                          : challengeStatus === 'ended'
+                              ? "Challenge terminé"
+                              : isSubmissionWindowOpen
+                                  ? 'Nouvelle soumission'
+                                  : "En attente de l'heure de soumission"}
                     </button>
                 )}
               </div>
