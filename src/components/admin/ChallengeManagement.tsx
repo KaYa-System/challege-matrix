@@ -48,12 +48,27 @@ export function ChallengeManagement() {
       setError(null);
       setSuccessMessage(null);
       
-      // If we're activating a challenge, check if there's already an active one
+      // If we're deactivating a challenge (changing from active to draft)
+      if (status === 'draft') {
+        const targetChallenge = challenges.find(c => c.id === challengeId);
+        if (targetChallenge && targetChallenge.status === 'active') {
+          // Show confirmation for deactivation
+          setConfirmAction({
+            challengeId,
+            status,
+            activeChallenge: targetChallenge
+          });
+          return;
+        }
+      }
+      
+      // If we're activating a challenge, perform validations
       if (status === 'active') {
+        // Check if there's already an active challenge
         const activeChallenge = challenges.find(c => c.status === 'active');
         
         if (activeChallenge) {
-          // Instead of automatically deactivating, show confirmation
+          // Show confirmation for already active challenge
           setConfirmAction({
             challengeId,
             status,
@@ -61,9 +76,25 @@ export function ChallengeManagement() {
           });
           return;
         }
+        
+        // Get the challenge we're trying to activate
+        const targetChallenge = challenges.find(c => c.id === challengeId);
+        if (!targetChallenge) return;
+        
+        // Check if this is level 1 or if the previous level is completed
+        if (targetChallenge.level > 1) {
+          const previousLevelCompleted = challenges.some(c => 
+            c.level === targetChallenge.level - 1 && c.status === 'completed'
+          );
+          
+          if (!previousLevelCompleted) {
+            setError(`Vous devez d'abord compléter le challenge de niveau ${targetChallenge.level - 1} avant d'activer celui-ci.`);
+            return;
+          }
+        }
       }
       
-      // If no active challenge or not activating, proceed with the update
+      // If all validations pass, proceed with the update
       await updateChallengeStatus(challengeId, status);
     } catch (err) {
       console.error('Erreur lors de la mise à jour du statut:', err);
@@ -91,7 +122,7 @@ export function ChallengeManagement() {
   
       if (error) throw error;
       await loadChallenges();
-      
+      // In the updateChallengeStatus function, update the success message section
       // Set success message based on the action
       if (status === 'active') {
         setSuccessMessage(deactivateOthers 
@@ -99,6 +130,8 @@ export function ChallengeManagement() {
           : 'Le challenge a été activé avec succès.');
       } else if (status === 'completed') {
         setSuccessMessage('Le challenge a été marqué comme terminé avec succès.');
+      } else if (status === 'draft' && challenges.find(c => c.id === challengeId)?.status === 'active') {
+        setSuccessMessage('Le challenge a été désactivé avec succès.');
       } else {
         setSuccessMessage('Le statut du challenge a été mis à jour avec succès.');
       }
@@ -300,14 +333,24 @@ export function ChallengeManagement() {
                             Activer
                           </button>
                         )}
+                        // In the table row rendering section, add a deactivate button for active challenges
                         {challenge.status === 'active' && (
-                          <button
-                            onClick={() => handleStatusChange(challenge.id, 'completed')}
-                            className="text-blue-600 hover:text-blue-700 transition-colors duration-150 px-2 py-1 rounded hover:bg-blue-50"
-                            title="Marquer comme terminé"
-                          >
-                            Terminer
-                          </button>
+                          <>
+                            <button
+                              onClick={() => handleStatusChange(challenge.id, 'completed')}
+                              className="text-blue-600 hover:text-blue-700 transition-colors duration-150 px-2 py-1 rounded hover:bg-blue-50"
+                              title="Marquer comme terminé"
+                            >
+                              Terminer
+                            </button>
+                            <button
+                              onClick={() => handleStatusChange(challenge.id, 'draft')}
+                              className="text-amber-600 hover:text-amber-700 transition-colors duration-150 px-2 py-1 rounded hover:bg-amber-50 ml-2"
+                              title="Désactiver le challenge"
+                            >
+                              Désactiver
+                            </button>
+                          </>
                         )}
                         {challenge.status === 'completed' && (
                           <button 
