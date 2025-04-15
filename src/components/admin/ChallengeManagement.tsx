@@ -333,7 +333,6 @@ export function ChallengeManagement() {
                             Activer
                           </button>
                         )}
-                        // In the table row rendering section, add a deactivate button for active challenges
                         {challenge.status === 'active' && (
                           <>
                             <button
