@@ -8,6 +8,7 @@ import { SubmissionHistory } from './components/history/SubmissionHistory';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { Navigation } from './components/Navigation';
 import { PublicHomepage } from './components/public/PublicHomepage';
+import { AccountManagement } from './components/account/AccountManagement';
 import { supabase } from './lib/supabase';
 import { retry } from './utils/retry';
 import { AlertCircle, Loader2 } from 'lucide-react';
@@ -147,6 +148,7 @@ function App() {
                 } />
                 <Route path="/challenges" element={<ChallengeList />} />
                 <Route path="/history" element={<SubmissionHistory />} />
+                <Route path="/account" element={<AccountManagement />} />
                 {isAdmin && <Route path="/admin" element={<AdminDashboard />} />}
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

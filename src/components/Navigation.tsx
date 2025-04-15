@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, Award, History, Menu, X, LogOut, Settings } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { supabase } from '../lib/supabase';
+// Add this to your imports
+import { User } from 'lucide-react';
 
 interface NavigationProps {
   isAdmin: boolean;
@@ -103,6 +105,13 @@ export function Navigation({ isAdmin }: NavigationProps) {
             Se déconnecter
           </button>
         </div>
+        <Link 
+          to="/account" 
+          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+        >
+          <User className="mr-2 h-5 w-5 text-gray-500" />
+          Mon compte
+        </Link>
       </div>
     </nav>
   );

@@ -19,6 +19,8 @@ export interface Database {
           created_at: string
           updated_at: string
           role: 'user' | 'admin'
+          avatar_url: string | null
+          current_level: number
         }
         Insert: {
           id?: string
@@ -29,6 +31,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           role?: 'user' | 'admin'
+          avatar_url?: string | null
+          current_level?: number
         }
         Update: {
           id?: string
@@ -39,6 +43,8 @@ export interface Database {
           created_at?: string
           updated_at?: string
           role?: 'user' | 'admin'
+          avatar_url?: string | null
+          current_level?: number
         }
       }
       matrix_submissions: {
