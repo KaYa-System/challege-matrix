@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Award, History, Menu, X, LogOut, Settings } from 'lucide-react';
+import { Home, Award, History, Menu, X, LogOut, Settings, User } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { supabase } from '../lib/supabase';
-// Add this to your imports
-import { User } from 'lucide-react';
+import type { Database } from '../types/supabase';
+
+type UserProfile = Database['public']['Tables']['users']['Row'];
 
 interface NavigationProps {
   isAdmin: boolean;
@@ -12,6 +13,7 @@ interface NavigationProps {
 
 export function Navigation({ isAdmin }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const location = useLocation();
 
   const navigation = isAdmin ? [
@@ -22,6 +24,30 @@ export function Navigation({ isAdmin }: NavigationProps) {
     { name: 'Challenges', icon: Award, href: '/challenges' },
     { name: 'Historique', icon: History, href: '/history' },
   ];
+
+  useEffect(() => {
+    async function loadUserProfile() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+            
+          if (data) {
+            setUserProfile(data);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      }
+    }
+    
+    loadUserProfile();
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -41,10 +67,10 @@ export function Navigation({ isAdmin }: NavigationProps) {
                   key={item.name}
                   to={item.href}
                   className={cn(
-                    'inline-flex items-center px-1 pt-1 text-sm font-medium border-b-2 transition-colors',
                     location.pathname === item.href
                       ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:text-gray-900 hover:border-gray-300'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                    'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium'
                   )}
                 >
                   <item.icon className="h-4 w-4 mr-2" />
@@ -53,66 +79,118 @@ export function Navigation({ isAdmin }: NavigationProps) {
               ))}
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            <Link
+              to="/account"
+              className={cn(
+                location.pathname === '/account'
+                  ? 'border-blue-500 text-gray-900'
+                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
+                'inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium mr-4'
+              )}
+            >
+              <div className="flex items-center">
+                <div className={cn("h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-2", 
+                  userProfile?.avatar_url ? "p-0" : "p-1.5")}>
+                  {userProfile?.avatar_url ? (
+                    <img 
+                      src={userProfile.avatar_url} 
+                      alt={userProfile.full_name || 'Avatar'} 
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4 text-blue-600" />
+                  )}
+                </div>
+                Mon compte
+              </div>
+            </Link>
             <button
               onClick={handleLogout}
-              className="hidden sm:inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
             >
               <LogOut className="h-4 w-4 mr-2" />
-              Se déconnecter
+              Déconnexion
             </button>
-            <div className="sm:hidden">
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
-              >
-                <span className="sr-only">Ouvrir le menu</span>
-                {mobileMenuOpen ? (
-                  <X className="block h-6 w-6" />
-                ) : (
-                  <Menu className="block h-6 w-6" />
-                )}
-              </button>
-            </div>
+          </div>
+          <div className="-mr-2 flex items-center sm:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+            >
+              <span className="sr-only">Open main menu</span>
+              {mobileMenuOpen ? (
+                <X className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Menu mobile */}
-      <div className={cn('sm:hidden', mobileMenuOpen ? 'block' : 'hidden')}>
-        <div className="pt-2 pb-3 space-y-1">
-          {navigation.map((item) => (
+      {mobileMenuOpen && (
+        <div className="sm:hidden">
+          <div className="pt-2 pb-3 space-y-1">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  location.pathname === item.href
+                    ? 'bg-blue-50 border-blue-500 text-blue-700'
+                    : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800',
+                  'block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
+                )}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <div className="flex items-center">
+                  <item.icon className="h-5 w-5 mr-3" />
+                  {item.name}
+                </div>
+              </Link>
+            ))}
             <Link
-              key={item.name}
-              to={item.href}
+              to="/account"
               className={cn(
-                'flex items-center px-3 py-2 text-base font-medium',
-                location.pathname === item.href
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                location.pathname === '/account'
+                  ? 'bg-blue-50 border-blue-500 text-blue-700'
+                  : 'border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800',
+                'block pl-3 pr-4 py-2 border-l-4 text-base font-medium'
               )}
+              onClick={() => setMobileMenuOpen(false)}
             >
-              <item.icon className="h-5 w-5 mr-3" />
-              {item.name}
+              <div className="flex items-center">
+                <div className={cn("h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center mr-3", 
+                  userProfile?.avatar_url ? "p-0" : "p-1.5")}>
+                  {userProfile?.avatar_url ? (
+                    <img 
+                      src={userProfile.avatar_url} 
+                      alt={userProfile.full_name || 'Avatar'} 
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <User className="h-4 w-4 text-blue-600" />
+                  )}
+                </div>
+                Mon compte
+              </div>
             </Link>
-          ))}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
-          >
-            <LogOut className="h-5 w-5 mr-3" />
-            Se déconnecter
-          </button>
+            <button
+              onClick={async () => {
+                await handleLogout();
+                setMobileMenuOpen(false);
+              }}
+              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-gray-600 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-800 text-base font-medium"
+            >
+              <div className="flex items-center">
+                <LogOut className="h-5 w-5 mr-3" />
+                Déconnexion
+              </div>
+            </button>
+          </div>
         </div>
-        <Link 
-          to="/account" 
-          className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-        >
-          <User className="mr-2 h-5 w-5 text-gray-500" />
-          Mon compte
-        </Link>
-      </div>
+      )}
     </nav>
   );
 }
