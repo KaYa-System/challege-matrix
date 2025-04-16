@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import {useEffect, useState} from 'react';
+import {format} from 'date-fns';
+import {fr} from 'date-fns/locale';
 import {
     AlertCircle,
     AlertTriangle,
@@ -17,15 +17,15 @@ import {
     Users
 } from 'lucide-react';
 import Countdown from 'react-countdown';
-import { supabase } from '../../lib/supabase';
-import { OfficeRanking } from '../rankings/OfficeRanking';
-import { UserRanking } from '../rankings/UserRanking';
-import { MatrixFormModal } from '../MatrixFormModal';
-import { NextChallengeModal } from '../NextChallengeModal';
-import { TermsModal } from "../TermsModal";
-import { ChallengeDetailsModal } from '../ChallengeDetailsModal';
-import type { Database } from '../../types/supabase';
-import { RewardDetailsModal } from '../RewardDetailsModal';
+import {supabase} from '../../lib/supabase';
+import {OfficeRanking} from '../rankings/OfficeRanking';
+import {UserRanking} from '../rankings/UserRanking';
+import {MatrixFormModal} from '../MatrixFormModal';
+import {NextChallengeModal} from '../NextChallengeModal';
+import {TermsModal} from "../TermsModal";
+import {ChallengeDetailsModal} from '../ChallengeDetailsModal';
+import type {Database} from '../../types/supabase';
+import {RewardDetailsModal} from '../RewardDetailsModal';
 
 type Challenge = Database['public']['Tables']['challenges']['Row'] & {
     submission_start: string;
@@ -134,10 +134,10 @@ export function ParticipantDashboard() {
             setLoading(true);
             setError(null);
 
-            const { data: { user } } = await supabase.auth.getUser();
+            const {data: {user}} = await supabase.auth.getUser();
             if (!user) throw new Error('Utilisateur non connecté');
 
-            const { data: userData, error: userError } = await supabase
+            const {data: userData, error: userError} = await supabase
                 .from('users')
                 .select('terms_accepted, current_level')
                 .eq('id', user.id)
@@ -147,7 +147,7 @@ export function ParticipantDashboard() {
             setTermsAccepted(userData.terms_accepted || false);
 
             // Récupérer le challenge actif pour le niveau de l'utilisateur
-            const { data: challengeData, error: challengeError } = await supabase
+            const {data: challengeData, error: challengeError} = await supabase
                 .from('challenges')
                 .select('*, submission_start, submission_end')
                 .eq('status', 'active')
@@ -161,11 +161,11 @@ export function ParticipantDashboard() {
 
             // Si aucun challenge n'est trouvé, rechercher tout challenge actif
             if (!currentChallenge) {
-                const { data: anyActiveChallenge, error: anyActiveError } = await supabase
+                const {data: anyActiveChallenge, error: anyActiveError} = await supabase
                     .from('challenges')
                     .select('*, submission_start, submission_end')
                     .eq('status', 'active')
-                    .order('level', { ascending: true })
+                    .order('level', {ascending: true})
                     .limit(1)
                     .maybeSingle();
 
@@ -173,9 +173,9 @@ export function ParticipantDashboard() {
 
                 if (anyActiveChallenge) {
                     if (!userData.current_level) {
-                        const { error: updateUserLevelError } = await supabase
+                        const {error: updateUserLevelError} = await supabase
                             .from('users')
-                            .update({ current_level: anyActiveChallenge.level })
+                            .update({current_level: anyActiveChallenge.level})
                             .eq('id', user.id);
 
                         if (updateUserLevelError) throw updateUserLevelError;
@@ -186,16 +186,16 @@ export function ParticipantDashboard() {
 
             // Set the active challenge state
             setActiveChallenge(currentChallenge);
-            
+
 
             // Continuer avec le reste du code pour récupérer les récompenses, etc.
             if (currentChallenge) {
                 // Fetch rewards for the current challenge
-                const { data: rewardsData, error: rewardsError } = await supabase
+                const {data: rewardsData, error: rewardsError} = await supabase
                     .from('rewards')
                     .select('*')
                     .eq('challenge_id', currentChallenge.id)
-                    .order('min_points', { ascending: true });
+                    .order('min_points', {ascending: true});
                 if (rewardsError) throw rewardsError;
                 setRewards(rewardsData || []);
 
@@ -205,7 +205,7 @@ export function ParticipantDashboard() {
                     // For example, to show what rewards are available in future levels
                 }
 
-                const { data: participationData, error: participationError } = await supabase
+                const {data: participationData, error: participationError} = await supabase
                     .from('challenge_participants')
                     .select('*')
                     .eq('user_id', user.id)
@@ -216,11 +216,11 @@ export function ParticipantDashboard() {
                 setParticipation(participationData);
 
                 // Charger les soumissions récentes
-                const { data: submissionsData, error: submissionsError } = await supabase
+                const {data: submissionsData, error: submissionsError} = await supabase
                     .from('matrix_submissions')
                     .select('*')
                     .eq('user_id', user.id)
-                    .order('submission_date', { ascending: false })
+                    .order('submission_date', {ascending: false})
                     .limit(5);
 
                 if (submissionsError) throw submissionsError;
@@ -228,7 +228,7 @@ export function ParticipantDashboard() {
 
                 if (participationData?.status === 'completed') {
                     const nextLevel = userData.current_level + 1;
-                    const { data: nextChallengeData, error: nextChallengeError } = await supabase
+                    const {data: nextChallengeData, error: nextChallengeError} = await supabase
                         .from('challenges')
                         .select('*')
                         .eq('status', 'active')
@@ -259,21 +259,21 @@ export function ParticipantDashboard() {
             setTransitioning(true);
             setError(null);
 
-            const { data: { user } } = await supabase.auth.getUser();
+            const {data: {user}} = await supabase.auth.getUser();
             if (!user) throw new Error('Utilisateur non connecté');
 
             if (nextChallenge.level !== activeChallenge.level + 1) {
                 throw new Error('Le niveau doit être exactement le niveau suivant');
             }
 
-            const { error: updateCurrentError } = await supabase
+            const {error: updateCurrentError} = await supabase
                 .from('challenges')
-                .update({ status: 'completed' })
+                .update({status: 'completed'})
                 .eq('id', activeChallenge.id);
 
             if (updateCurrentError) throw updateCurrentError;
 
-            const { error: updateUserError } = await supabase
+            const {error: updateUserError} = await supabase
                 .from('users')
                 .update({
                     current_level: nextChallenge.level,
@@ -317,7 +317,7 @@ export function ParticipantDashboard() {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
                 <div className="text-center">
-                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+                    <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4"/>
                     <p className="text-gray-600">{error}</p>
                 </div>
             </div>
@@ -328,7 +328,7 @@ export function ParticipantDashboard() {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
                 <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
-                    <Trophy className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                    <Trophy className="h-12 w-12 text-blue-600 mx-auto mb-4"/>
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
                         Prêt pour le prochain niveau ?
                     </h2>
@@ -347,7 +347,7 @@ export function ParticipantDashboard() {
                             </>
                         ) : (
                             <>
-                                <ArrowRight className="h-4 w-4 mr-2" />
+                                <ArrowRight className="h-4 w-4 mr-2"/>
                                 Commencer le niveau {nextChallenge.level}
                             </>
                         )}
@@ -361,7 +361,7 @@ export function ParticipantDashboard() {
         return (
             <div className="min-h-[400px] flex items-center justify-center">
                 <div className="text-center">
-                    <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                    <AlertCircle className="h-12 w-12 text-yellow-500 mx-auto mb-4"/>
                     <p className="text-gray-600">Aucun challenge n'est actuellement disponible</p>
                 </div>
             </div>
@@ -387,11 +387,11 @@ export function ParticipantDashboard() {
         statusBanner = (
             <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-lg">
                 <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-yellow-500 mr-2" />
+                    <Calendar className="h-5 w-5 text-yellow-500 mr-2"/>
                     <p className="text-yellow-700 font-medium">
                         Ce challenge n'a pas encore commencé. Il débutera le{' '}
                         <span className="font-bold">
-                            {format(new Date(activeChallenge.start_date), 'dd MMMM yyyy', { locale: fr })}
+                            {format(new Date(activeChallenge.start_date), 'dd MMMM yyyy', {locale: fr})}
                         </span>
                     </p>
                 </div>
@@ -400,7 +400,7 @@ export function ParticipantDashboard() {
                         <span className="text-yellow-600 font-medium">Temps restant : </span>
                         <Countdown
                             date={countdownTarget}
-                            renderer={({ days, hours, minutes, seconds }) => (
+                            renderer={({days, hours, minutes, seconds}) => (
                                 <span className="text-yellow-800 font-bold">
                                     {days}j {hours}h {minutes}m {seconds}s
                                 </span>
@@ -415,11 +415,11 @@ export function ParticipantDashboard() {
         statusBanner = (
             <div className="bg-gray-50 border-l-4 border-gray-400 p-4 mb-4 rounded-lg">
                 <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-gray-500 mr-2" />
+                    <CheckCircle className="h-5 w-5 text-gray-500 mr-2"/>
                     <p className="text-gray-700 font-medium">
                         Ce challenge est terminé depuis le{' '}
                         <span className="font-bold">
-                            {format(new Date(activeChallenge.end_date), 'dd MMMM yyyy', { locale: fr })}
+                            {format(new Date(activeChallenge.end_date), 'dd MMMM yyyy', {locale: fr})}
                         </span>
                     </p>
                 </div>
@@ -429,10 +429,10 @@ export function ParticipantDashboard() {
         statusBanner = (
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-lg">
                 <div className="flex items-center">
-                    <AlertTriangle className="h-5 w-5 text-blue-500 mr-2" />
+                    <AlertTriangle className="h-5 w-5 text-blue-500 mr-2"/>
                     <p className="text-blue-700 font-medium">
                         La fenêtre de soumission est actuellement fermée. Prochaine fenêtre à{' '}
-                        {countdownTarget && format(countdownTarget, 'HH:mm', { locale: fr })}
+                        {countdownTarget && format(countdownTarget, 'HH:mm', {locale: fr})}
                     </p>
                 </div>
                 {countdownTarget && (
@@ -440,7 +440,7 @@ export function ParticipantDashboard() {
                         <span className="text-blue-600 font-medium">Temps restant : </span>
                         <Countdown
                             date={countdownTarget}
-                            renderer={({ days, hours, minutes, seconds }) => (
+                            renderer={({days, hours, minutes, seconds}) => (
                                 <span className="text-blue-800 font-bold">
                                     {days}j {hours}h {minutes}m {seconds}s
                                 </span>
@@ -454,10 +454,11 @@ export function ParticipantDashboard() {
         statusBanner = (
             <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4 rounded-lg">
                 <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-2"/>
                     <p className="text-green-700 font-medium">
-                        La fenêtre de soumission est actuellement ouverte ! Vous pouvez soumettre vos résultats jusqu'à{' '}
-                        {countdownTarget && format(countdownTarget, 'HH:mm', { locale: fr })}
+                        La fenêtre de soumission est actuellement ouverte ! Vous pouvez soumettre vos résultats
+                        jusqu'à{' '}
+                        {countdownTarget && format(countdownTarget, 'HH:mm', {locale: fr})}
                     </p>
                 </div>
                 {countdownTarget && (
@@ -465,7 +466,7 @@ export function ParticipantDashboard() {
                         <span className="text-green-600 font-medium">Temps restant : </span>
                         <Countdown
                             date={countdownTarget}
-                            renderer={({ days, hours, minutes, seconds }) => (
+                            renderer={({days, hours, minutes, seconds}) => (
                                 <span className="text-green-800 font-bold">
                                     {hours}h {minutes}m {seconds}s
                                 </span>
@@ -484,7 +485,7 @@ export function ParticipantDashboard() {
             {recentlyValidated && (
                 <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4 rounded-lg animate-pulse">
                     <div className="flex items-center">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                        <CheckCircle className="h-5 w-5 text-green-500 mr-2"/>
                         <p className="text-green-700 font-medium">
                             Votre soumission a été enregistrée avec succès !
                         </p>
@@ -501,7 +502,7 @@ export function ParticipantDashboard() {
                             ? 'text-blue-600 border-b-2 border-blue-500'
                             : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <Home className="h-4 w-4 mr-2" />
+                        <Home className="h-4 w-4 mr-2"/>
                         Aperçu
                     </button>
                     <button
@@ -510,7 +511,7 @@ export function ParticipantDashboard() {
                             ? 'text-blue-600 border-b-2 border-blue-500'
                             : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <History className="h-4 w-4 mr-2" />
+                        <History className="h-4 w-4 mr-2"/>
                         Mes soumissions
                     </button>
                     <button
@@ -519,7 +520,7 @@ export function ParticipantDashboard() {
                             ? 'text-blue-600 border-b-2 border-blue-500'
                             : 'text-gray-500 hover:text-gray-700'}`}
                     >
-                        <Trophy className="h-4 w-4 mr-2" />
+                        <Trophy className="h-4 w-4 mr-2"/>
                         Classements
                     </button>
                 </div>
@@ -528,7 +529,8 @@ export function ParticipantDashboard() {
                     {/* Onglet Aperçu */}
                     {activeTab === 'overview' && (
                         <div className="space-y-6">
-                            <div className={`bg-white rounded-xl shadow-sm p-6 border-2 ${statusBorderColor} transition-colors duration-300`}>
+                            <div
+                                className={`bg-white rounded-xl shadow-sm p-6 border-2 ${statusBorderColor} transition-colors duration-300`}>
                                 <div className="flex items-start justify-between">
                                     <div>
                                         <h2 className="text-2xl font-bold text-gray-900">
@@ -536,8 +538,9 @@ export function ParticipantDashboard() {
                                         </h2>
 
                                     </div>
-                                    <div className="flex items-center space-x-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                                        <Trophy className="h-4 w-4" />
+                                    <div
+                                        className="flex items-center space-x-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                                        <Trophy className="h-4 w-4"/>
                                         <span className="text-sm font-medium">Niveau {activeChallenge.level}</span>
                                     </div>
                                 </div>
@@ -549,7 +552,7 @@ export function ParticipantDashboard() {
                                         className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
                                     >
                                         Voir les détails du challenge
-                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                        <ChevronRight className="h-4 w-4 ml-1"/>
                                     </button>
                                 </div>
 
@@ -557,7 +560,7 @@ export function ParticipantDashboard() {
                                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-medium text-gray-900">Progression</h3>
-                                            <Target className="h-5 w-5 text-blue-600" />
+                                            <Target className="h-5 w-5 text-blue-600"/>
                                         </div>
                                         <div className="flex items-end justify-between">
                                             <div>
@@ -593,16 +596,16 @@ export function ParticipantDashboard() {
                                     <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-medium text-gray-900">Période</h3>
-                                            <Clock className="h-5 w-5 text-emerald-600" />
+                                            <Clock className="h-5 w-5 text-emerald-600"/>
                                         </div>
                                         <p className="text-sm text-gray-600">
                                             Du{' '}
                                             <span className="font-medium">
-                                                {format(new Date(activeChallenge.start_date), 'dd MMM', { locale: fr })}
+                                                {format(new Date(activeChallenge.start_date), 'dd MMM', {locale: fr})}
                                             </span>
                                             {' '}au{' '}
                                             <span className="font-medium">
-                                                {format(new Date(activeChallenge.end_date), 'dd MMM', { locale: fr })}
+                                                {format(new Date(activeChallenge.end_date), 'dd MMM', {locale: fr})}
                                             </span>
                                         </p>
                                         <div className="mt-2">
@@ -614,7 +617,7 @@ export function ParticipantDashboard() {
                                             {countdownTarget && (
                                                 <Countdown
                                                     date={countdownTarget}
-                                                    renderer={({ days, hours, minutes, seconds }) => (
+                                                    renderer={({days, hours, minutes, seconds}) => (
                                                         <p className="text-lg font-bold text-gray-900">
                                                             {days > 0 ? `${days}j ` : ''}{hours}h {minutes}m {seconds}s
                                                         </p>
@@ -627,7 +630,8 @@ export function ParticipantDashboard() {
                                     <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4">
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="text-sm font-medium text-gray-900">Statut</h3>
-                                            <div className={`h-2 w-2 rounded-full ${participation?.status === 'completed'
+                                            <div
+                                                className={`h-2 w-2 rounded-full ${participation?.status === 'completed'
                                                     ? 'bg-green-500'
                                                     : participation?.status === 'failed'
                                                         ? 'bg-red-500'
@@ -653,12 +657,13 @@ export function ParticipantDashboard() {
                                                 >
                                                     {transitioning ? (
                                                         <>
-                                                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                                            <div
+                                                                className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                                                             Transition...
                                                         </>
                                                     ) : (
                                                         <>
-                                                            <ArrowRight className="h-4 w-4 mr-2" />
+                                                            <ArrowRight className="h-4 w-4 mr-2"/>
                                                             Niveau suivant
                                                         </>
                                                     )}
@@ -678,7 +683,7 @@ export function ParticipantDashboard() {
                                                                     : ""
                                                     }
                                                 >
-                                                    <Plus className="h-4 w-4 mr-2" />
+                                                    <Plus className="h-4 w-4 mr-2"/>
                                                     {challengeStatus === 'not_started'
                                                         ? "En attente du début"
                                                         : challengeStatus === 'ended'
@@ -695,7 +700,7 @@ export function ParticipantDashboard() {
 
                             <div className="bg-white rounded-xl shadow-sm p-6">
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                                    <Trophy className="h-5 w-5 mr-2 text-amber-500" />
+                                    <Trophy className="h-5 w-5 mr-2 text-amber-500"/>
                                     Récompenses à débloquer
                                 </h3>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -712,11 +717,14 @@ export function ParticipantDashboard() {
                                                 <span className="text-xs font-medium text-gray-500">
                                                     {reward.min_points} points requis
                                                 </span>
-                                                <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                                                <ChevronRight
+                                                    className="h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors"/>
                                             </div>
                                             {(participation?.current_points || 0) >= reward.min_points && (
-                                                <div className="absolute inset-0 bg-green-500/10 rounded-lg flex items-center justify-center">
-                                                    <span className="bg-white px-3 py-1 rounded-full text-xs font-medium text-green-600">
+                                                <div
+                                                    className="absolute inset-0 bg-green-500/10 rounded-lg flex items-center justify-center">
+                                                    <span
+                                                        className="bg-white px-3 py-1 rounded-full text-xs font-medium text-green-600">
                                                         Débloqué !
                                                     </span>
                                                 </div>
@@ -733,7 +741,7 @@ export function ParticipantDashboard() {
                         <div className="space-y-6">
                             <div className="flex justify-between items-center">
                                 <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                                    <History className="h-5 w-5 mr-2 text-blue-500" />
+                                    <History className="h-5 w-5 mr-2 text-blue-500"/>
                                     Mes soumissions récentes
                                 </h3>
                                 <button
@@ -741,21 +749,21 @@ export function ParticipantDashboard() {
                                     disabled={submitButtonDisabled}
                                     className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
                                 >
-                                    <Plus className="h-4 w-4 mr-2" />
+                                    <Plus className="h-4 w-4 mr-2"/>
                                     Nouvelle soumission
                                 </button>
                             </div>
 
                             {recentSubmissions.length === 0 ? (
                                 <div className="text-center py-12 bg-gray-50 rounded-lg">
-                                    <History className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                                    <History className="h-12 w-12 text-gray-400 mx-auto mb-3"/>
                                     <p className="text-gray-600">Aucune soumission récente</p>
                                     <button
                                         onClick={() => setShowMatrixForm(true)}
                                         disabled={submitButtonDisabled}
                                         className="mt-4 inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
                                     >
-                                        <Plus className="h-4 w-4 mr-2" />
+                                        <Plus className="h-4 w-4 mr-2"/>
                                         Faire ma première soumission
                                     </button>
                                 </div>
@@ -763,70 +771,79 @@ export function ParticipantDashboard() {
                                 <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Date
-                                                </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    MX Global
-                                                </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Détails
-                                                </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Statut
-                                                </th>
-                                            </tr>
+                                        <tr>
+                                            <th scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Date
+                                            </th>
+                                            <th scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                MX Global
+                                            </th>
+                                            <th scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Détails
+                                            </th>
+                                            <th scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Statut
+                                            </th>
+                                        </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {recentSubmissions.map((submission) => (
-                                                <tr key={submission.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {format(new Date(submission.submission_date), 'dd MMM yyyy HH:mm', { locale: fr })}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {submission.mx_global}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">
-                                                            MXf: {submission.mxf}
-                                                        </div>
-                                                        <div className="text-sm text-gray-500">
-                                                            MXm: {submission.mxm} | MX: {submission.mx}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${submission.status === 'validated'
+                                       {/* {recentSubmissions.map((submission)*/}
+
+                                        {recentSubmissions.filter(sub => sub.status === 'validated').map((submission) => (
+                                            <tr key={submission.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    {format(new Date(submission.submission_date), 'dd MMM yyyy HH:mm', {locale: fr})}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    {submission.mx_global}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                    <div className="text-sm text-gray-900">
+                                                        MXf: {submission.mxf}
+                                                    </div>
+                                                    <div className="text-sm text-gray-500">
+                                                        MXm: {submission.mxm} | MX: {submission.mx}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span
+                                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${submission.status === 'validated'
                                                                 ? 'bg-green-100 text-green-800'
                                                                 : submission.status === 'rejected'
                                                                     ? 'bg-red-100 text-red-800'
                                                                     : 'bg-yellow-100 text-yellow-800'
                                                             }`}>
                                                             {submission.status === 'validated' && (
-                                                                <CheckCircle className="h-3 w-3 mr-1" />
+                                                                <CheckCircle className="h-3 w-3 mr-1"/>
                                                             )}
                                                             {submission.status === 'rejected' && (
-                                                                <AlertCircle className="h-3 w-3 mr-1" />
+                                                                <AlertCircle className="h-3 w-3 mr-1"/>
                                                             )}
                                                             {submission.status === 'pending' && (
-                                                                <Clock className="h-3 w-3 mr-1" />
+                                                                <Clock className="h-3 w-3 mr-1"/>
                                                             )}
                                                             {submission.status === 'validated' ? 'Validé'
                                                                 : submission.status === 'rejected' ? 'Rejeté'
                                                                     : 'En attente'}
                                                         </span>
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                </td>
+                                            </tr>
+                                        ))}
                                         </tbody>
                                     </table>
                                 </div>
                             )}
 
                             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                                <h4 className="text-sm font-medium text-blue-800 mb-2">Comment fonctionnent les soumissions ?</h4>
+                                <h4 className="text-sm font-medium text-blue-800 mb-2">Comment fonctionnent les
+                                    soumissions ?</h4>
                                 <ul className="text-sm text-blue-700 space-y-1 list-disc pl-5">
-                                    <li>Vous pouvez soumettre vos résultats uniquement pendant les heures d'ouverture</li>
+                                    <li>Vous pouvez soumettre vos résultats uniquement pendant les heures d'ouverture
+                                    </li>
                                     <li>Les soumissions sont validées par nos administrateurs</li>
                                     <li>Une fois validées, vos points sont automatiquement ajoutés à votre total</li>
                                     <li>Atteignez le nombre de points requis pour compléter le challenge</li>
@@ -841,17 +858,17 @@ export function ParticipantDashboard() {
                             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                                        <Trophy className="h-5 w-5 mr-2 text-amber-500" />
+                                        <Trophy className="h-5 w-5 mr-2 text-amber-500"/>
                                         Classement des Bureaux
                                     </h3>
-                                    <OfficeRanking />
+                                    <OfficeRanking/>
                                 </div>
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                                        <Users className="h-5 w-5 mr-2 text-purple-500" />
+                                        <Users className="h-5 w-5 mr-2 text-purple-500"/>
                                         Top 10 Participants
                                     </h3>
-                                    <UserRanking />
+                                    <UserRanking/>
                                 </div>
                             </div>
                         </div>
