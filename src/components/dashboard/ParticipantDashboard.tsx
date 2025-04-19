@@ -754,6 +754,9 @@ export function ParticipantDashboard() {
                                 </button>
                             </div>
 
+                            {/* Remplacer cette partie dans le fichier ParticipantDashboard.tsx */}
+
+                            {/* Dans l'onglet "submissions" */}
                             {recentSubmissions.length === 0 ? (
                                 <div className="text-center py-12 bg-gray-50 rounded-lg">
                                     <History className="h-12 w-12 text-gray-400 mx-auto mb-3"/>
@@ -791,48 +794,50 @@ export function ParticipantDashboard() {
                                         </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                       {/* {recentSubmissions.map((submission)*/}
+                                        {/* Afficher uniquement la soumission validée la plus récente */}
+                                        {(() => {
+                                            const mostRecentSubmission = recentSubmissions
+                                                .filter(sub => sub.status === 'validated')
+                                                .sort((a, b) => new Date(b.submission_date).getTime() - new Date(a.submission_date).getTime())[0];
 
-                                        {recentSubmissions.filter(sub => sub.status === 'validated').map((submission) => (
-                                            <tr key={submission.id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {format(new Date(submission.submission_date), 'dd MMM yyyy HH:mm', {locale: fr})}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                    {submission.mx_global}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-900">
-                                                        MXf: {submission.mxf}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        MXm: {submission.mxm} | MX: {submission.mx}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span
-                                                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${submission.status === 'validated'
-                                                                ? 'bg-green-100 text-green-800'
-                                                                : submission.status === 'rejected'
-                                                                    ? 'bg-red-100 text-red-800'
-                                                                    : 'bg-yellow-100 text-yellow-800'
-                                                            }`}>
-                                                            {submission.status === 'validated' && (
-                                                                <CheckCircle className="h-3 w-3 mr-1"/>
-                                                            )}
-                                                            {submission.status === 'rejected' && (
-                                                                <AlertCircle className="h-3 w-3 mr-1"/>
-                                                            )}
-                                                            {submission.status === 'pending' && (
-                                                                <Clock className="h-3 w-3 mr-1"/>
-                                                            )}
-                                                            {submission.status === 'validated' ? 'Validé'
-                                                                : submission.status === 'rejected' ? 'Rejeté'
-                                                                    : 'En attente'}
-                                                        </span>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                            if (mostRecentSubmission) {
+                                                return (
+                                                    <tr key={mostRecentSubmission.id} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {format(new Date(mostRecentSubmission.submission_date), 'dd MMM yyyy HH:mm', {locale: fr})}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            {mostRecentSubmission.mx_global}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="text-sm text-gray-900">
+                                                                MXf: {mostRecentSubmission.mxf}
+                                                            </div>
+                                                            <div className="text-sm text-gray-500">
+                                                                MXm: {mostRecentSubmission.mxm} |
+                                                                MX: {mostRecentSubmission.mx}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                <span
+                                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-1"/>
+                                    Validé
+                                </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            } else {
+                                                return (
+                                                    <tr>
+                                                        <td colSpan={4}
+                                                            className="px-6 py-4 text-center text-sm text-gray-500">
+                                                            Aucune soumission validée
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            }
+                                        })()}
                                         </tbody>
                                     </table>
                                 </div>

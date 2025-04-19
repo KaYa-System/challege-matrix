@@ -195,7 +195,10 @@ export function ChallengeList() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {challenges.map((challenge) => (
+        {
+          challenges
+              .filter((chal) => chal.status ==='active')
+        .map((challenge) => (
           <div
             key={challenge.id}
             className="bg-white rounded-xl shadow-sm overflow-hidden group hover:shadow-md transition-shadow"
